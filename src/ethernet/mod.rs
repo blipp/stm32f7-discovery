@@ -8,6 +8,7 @@ use embedded::interfaces::gpio;
 use volatile::Volatile;
 use net::ipv4::Ipv4Address;
 use net::ethernet::{EthernetAddress, EthernetPacket};
+use net::WriteOut;
 use net::{self, TxPacket};
 
 mod init;
@@ -140,6 +141,20 @@ impl EthernetDevice {
         self.start_send();
 
         self.last_discover_at = system_clock::ticks();
+
+        Ok(())
+    }
+
+    pub fn send_unknown_packet<T: net::WriteOut>(&mut self, packet: &EthernetPacket<T>) -> Result<(), Error> {
+
+        use net::{TxPacket};
+        use system_clock;
+        
+        let mut tx_packet = TxPacket::new(packet.len());
+
+        packet.write_out(&mut tx_packet)?;
+        self.tx.insert(tx_packet.into_boxed_slice());
+        self.start_send();
 
         Ok(())
     }
