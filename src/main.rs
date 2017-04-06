@@ -13,6 +13,7 @@ extern crate r0;
 extern crate alloc;
 #[macro_use]
 extern crate collections;
+extern crate net;
 
 // hardware register structs with accessor methods
 use stm32f7::{system_clock, sdram, lcd, i2c, audio, touch, board, ethernet, embedded};
@@ -168,50 +169,84 @@ fn main(hw: board::Hardware) -> ! {
     let mut last_color_change = system_clock::ticks();
     let mut button_pressed_old = false;
     loop {
-        let ticks = system_clock::ticks();
+        // let ticks = system_clock::ticks();
 
-        // every 0.5 seconds
-        if ticks - last_led_toggle >= 500 {
-            // toggle the led
-            let led_current = led.get();
-            led.set(!led_current);
-            last_led_toggle = ticks;
+        // // every 0.5 seconds
+        // if ticks - last_led_toggle >= 500 {
+        //     // toggle the led
+        //     let led_current = led.get();
+        //     led.set(!led_current);
+        //     last_led_toggle = ticks;
+        // }
+
+        // lcd.clear_screen();
+
+        {
+            use net::ethernet::{EthernetPacket,EthernetAddress};
+            use net::ethernet::EtherType;
+            use net::WriteOut;
+            use lcd::Color;
+
+            let data = [0xfe; 1536 - 14];
+            let addr1 = EthernetAddress::new([0xff,0xff,0xff,0xff,0xff,0xff]);
+            let addr2 = EthernetAddress::new([0xff,0xff,0xff,0xff,0xff,0xff]);
+
+            let packet = EthernetPacket::new(
+                addr1,
+                addr2,
+                EtherType::Unknown(0xcafe),
+                &data
+                );
+
+            let ticks = system_clock::ticks();
+            if let Ok(ref mut eth_device) = eth_device {
+
+                eth_device.send_unknown_packet(&packet);
+                // println!("Ethernet Packet sent!");
+                // lcd.set_background_color(Color::from_hex(0x00_ff_00));
+
+            } else {
+                // println!("Ethernet device could not be unpacked!");
+                // lcd.set_background_color(Color::from_hex(0xff_00_00));
+            }
+
+            println!("Tick diff {}", system_clock::ticks() - ticks);
         }
 
-        let button_pressed = button.get();
-        if (button_pressed && !button_pressed_old) || ticks - last_color_change >= 1000 {
-            // choose a new background color
-            let new_color = ((system_clock::ticks() as u32).wrapping_mul(19801)) % 0x1000000;
-            lcd.set_background_color(lcd::Color::from_hex(new_color));
-            last_color_change = ticks;
-        }
+        // let button_pressed = button.get();
+        // if (button_pressed && !button_pressed_old) || ticks - last_color_change >= 1000 {
+        //     // choose a new background color
+        //     let new_color = ((system_clock::ticks() as u32).wrapping_mul(19801)) % 0x1000000;
+        //     lcd.set_background_color(lcd::Color::from_hex(new_color));
+        //     last_color_change = ticks;
+        // }
 
-        // poll for new audio data
-        while !sai_2.bsr.read().freq() {} // fifo_request_flag
-        let data0 = sai_2.bdr.read().data();
-        while !sai_2.bsr.read().freq() {} // fifo_request_flag
-        let data1 = sai_2.bdr.read().data();
+        // // poll for new audio data
+        // while !sai_2.bsr.read().freq() {} // fifo_request_flag
+        // let data0 = sai_2.bdr.read().data();
+        // while !sai_2.bsr.read().freq() {} // fifo_request_flag
+        // let data1 = sai_2.bdr.read().data();
 
-        lcd.set_next_col(data0, data1);
+        // lcd.set_next_col(data0, data1);
 
-        // poll for new touch data
-        for touch in &touch::touches(&mut i2c_3).unwrap() {
-            lcd.print_point_at(touch.x, touch.y);
-        }
+        // // poll for new touch data
+        // for touch in &touch::touches(&mut i2c_3).unwrap() {
+        //     lcd.print_point_at(touch.x, touch.y);
+        // }
 
         // handle new ethernet packets
-        if let Ok(ref mut eth_device) = eth_device {
-            loop {
-                if let Err(err) = eth_device.handle_next_packet() {
-                    match err {
-                        stm32f7::ethernet::Error::Exhausted => {}
-                        _ => {} // println!("err {:?}", e),
-                    }
-                    break;
-                }
-            }
-        }
+        // if let Ok(ref mut eth_device) = eth_device {
+        //     loop {
+        //         if let Err(err) = eth_device.handle_next_packet() {
+        //             match err {
+        //                 stm32f7::ethernet::Error::Exhausted => {}
+        //                 _ => {} // println!("err {:?}", e),
+        //             }
+        //             break;
+        //         }
+        //     }
+        // }
 
-        button_pressed_old = button_pressed;
+        // button_pressed_old = button_pressed;
     }
 }
