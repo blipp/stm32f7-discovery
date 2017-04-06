@@ -145,10 +145,8 @@ impl EthernetDevice {
         Ok(())
     }
 
-    pub fn send_unknown_packet<T: net::WriteOut>(&mut self, packet: &EthernetPacket<T>) -> Result<(), Error> {
-
+    pub fn send_packet<T: net::WriteOut>(&mut self, packet: &EthernetPacket<T>) -> Result<(), Error> {
         use net::{TxPacket};
-        use system_clock;
         
         let mut tx_packet = TxPacket::new(packet.len());
 

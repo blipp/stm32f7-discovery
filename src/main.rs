@@ -201,7 +201,7 @@ fn main(hw: board::Hardware) -> ! {
             let ticks = system_clock::ticks();
             if let Ok(ref mut eth_device) = eth_device {
 
-                eth_device.send_unknown_packet(&packet);
+                eth_device.send_packet(&packet);
                 // println!("Ethernet Packet sent!");
                 // lcd.set_background_color(Color::from_hex(0x00_ff_00));
 
