@@ -163,10 +163,8 @@ impl EthernetDevice {
             println!("missed packets: {}", missed_packets);
         }
 
-        if self.ipv4_addr.is_none() {
-            if self.requested_ipv4_addr.is_none() {
-                self.send_dhcp_discover()?;
-            }
+        if self.ipv4_addr.is_none() && self.requested_ipv4_addr.is_none() {
+            self.send_dhcp_discover()?;
         }
 
         let reply = self.process_next_packet()?;
@@ -436,11 +434,7 @@ impl TxDevice {
     pub fn cleanup(&mut self) {
         let mut c = 0;
         for descriptor in self.descriptors.iter_mut() {
-            descriptor.update(|d| if !d.own() {
-                                  if let Some(_) = d.buffer() {
-                                      c += 1;
-                                  }
-                              });
+            descriptor.update(|d| if !d.own() && d.buffer().is_some() { c += 1; });
         }
         if c > 0 {
             // println!("cleaned up {} packets", c);
