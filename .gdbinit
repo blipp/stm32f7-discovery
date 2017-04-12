@@ -25,14 +25,11 @@ define semihosting-enable
   source semihosting.py
   catch signal SIGTRAP
   commands
-    silent
-    if (*(int)$pc&0xff) == 0xab
+      silent
       pi SemiHostHelper.on_break()
       set $pc = $pc + 2
       continue
-    else
       echo \n
       frame
-    end
   end
 end
