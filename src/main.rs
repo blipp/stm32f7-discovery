@@ -13,6 +13,7 @@ extern crate r0;
 extern crate alloc;
 #[macro_use]
 extern crate collections;
+#[macro_use]
 extern crate net;
 
 // hardware register structs with accessor methods
@@ -157,6 +158,8 @@ fn main(hw: board::Hardware) -> ! {
                                                        ethernet_dma);
     if let Err(e) = eth_device {
         println!("ethernet init failed: {:?}", e);
+    } else {
+        println!("ethernet up");
     }
 
     lcd.clear_screen();
@@ -185,7 +188,7 @@ fn main(hw: board::Hardware) -> ! {
             use net::WriteOut;
             use lcd::Color;
 
-            let data = [0xfe; 1536 - 14];
+            let data = [0xfe; 1534 - 14];
             let addr1 = EthernetAddress::new([0xff,0xff,0xff,0xff,0xff,0xff]);
             let addr2 = EthernetAddress::new([0xff,0xff,0xff,0xff,0xff,0xff]);
 
@@ -208,7 +211,7 @@ fn main(hw: board::Hardware) -> ! {
                 // lcd.set_background_color(Color::from_hex(0xff_00_00));
             }
 
-            println!("Tick diff {}", system_clock::ticks() - ticks);
+            //println!("Tick diff {}", system_clock::ticks() - ticks);
         }
 
         // let button_pressed = button.get();
